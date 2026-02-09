@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGX Sustainability Robot | SGX</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sgx-navy: #213C6D;
+            --sgx-lime: #8CC63F;
+            --sgx-lime-light: #A7D74B;
+            --bg-pale: #EBF9D5;
+            --bg-light: #F5FBF0;
+            --bg-white: #FFFFFF;
+            --text-dark: #2D3748;
+            --text-muted: #64748B;
+            --border-soft: #D4E8B8;
+            --shadow-soft: 0 2px 12px rgba(33, 60, 109, 0.08);
+            --radius: 16px;
+            --radius-sm: 12px;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #EBF9D5 0%, #E0F2F1 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0;
+            font-family: 'DM Sans', -apple-system, sans-serif;
+        }
+        #phone {
+            width: 400px; height: 850px;
+            background: var(--bg-white);
+            border-radius: 45px; border: 12px solid var(--sgx-navy);
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: var(--shadow-soft), 0 30px 60px rgba(33, 60, 109, 0.15);
+        }
+        #header {
+            background: var(--sgx-navy);
+            color: white;
+            padding: 24px 20px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-bottom: 3px solid var(--sgx-lime);
+        }
+        .bot-logo {
+            width: 44px; height: 44px;
+            flex-shrink: 0;
+        }
+        .bot-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .header-logo { width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); border-radius: 12px; padding: 4px; }
+        .header-logo img { width: 100%; height: 100%; object-fit: contain; }
+        #header-text { text-align: center; }
+        #header h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+        #header .tagline { margin: 4px 0 0; font-size: 10px; font-weight: 600; opacity: 0.85; letter-spacing: 0.08em; }
+
+        #tabs {
+            display: flex;
+            background: var(--bg-light);
+            padding: 12px 12px 14px;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 6px;
+            font-size: 10px; font-weight: 600;
+            text-align: center;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .tab:hover { background: rgba(140, 198, 63, 0.15); color: var(--sgx-navy); }
+        .tab.active { background: var(--sgx-lime); color: white; }
+
+        #main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .tab-panel.active { display: flex; }
+
+        #chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: var(--bg-white);
+            scroll-behavior: smooth;
+        }
+        .bubble {
+            padding: 14px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            line-height: 1.55;
+            max-width: 88%;
+            opacity: 0;
+            animation: fadeIn 0.4s ease forwards;
+            box-shadow: var(--shadow-soft);
+        }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .bot {
+            background: var(--bg-light);
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            border: 1px solid var(--border-soft);
+            color: var(--text-dark);
+        }
+        .user {
+            background: var(--sgx-lime);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+
+        .stock-card {
+            background: var(--bg-white);
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-top: 12px;
+            position: relative;
+            border-left: 5px solid var(--sgx-lime);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: slideIn 0.5s ease forwards;
+            transition: all 0.25s ease;
+        }
+        .stock-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(33, 60, 109, 0.1);
+            border-color: var(--sgx-lime-light);
+        }
+        @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+        .stock-card:nth-child(1) { animation-delay: 0.1s; }
+        .stock-card:nth-child(2) { animation-delay: 0.25s; }
+        .stock-card:nth-child(3) { animation-delay: 0.4s; }
+
+        .match-tag {
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--sgx-lime);
+            color: white;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            border-bottom-left-radius: 14px;
+        }
+        .comp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
+        .comp-pill {
+            background: var(--bg-light);
+            border: 1px solid var(--border-soft);
+            padding: 8px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .comp-pill:hover { background: #D4E8B8; }
+        .comp-pill span { display: block; font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .comp-pill b { font-size: 13px; color: var(--sgx-navy); }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-sm {
+            padding: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 1px solid var(--border-soft);
+            background: var(--bg-white);
+            color: var(--text-dark);
+            transition: all 0.2s;
+        }
+        .btn-sm:hover {
+            background: var(--bg-light);
+            border-color: var(--sgx-lime);
+            transform: scale(1.02);
+        }
+        .btn-sm:active { transform: scale(0.98); }
+        .invest-btn {
+            grid-column: span 2;
+            background: var(--sgx-lime);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-weight: 700;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        .invest-btn:hover { background: #7AB82E; }
+
+        #controls {
+            background: var(--bg-light);
+            padding: 24px 20px 28px;
+            border-top: 1px solid var(--border-soft);
+            border-radius: 28px 28px 0 0;
+        }
+        .s-box { margin-bottom: 18px; }
+        .s-box label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+        .slider-track {
+            height: 8px;
+            background: var(--border-soft);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: var(--border-soft);
+            border-radius: 4px;
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: var(--border-soft);
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--sgx-lime);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(140, 198, 63, 0.4);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--sgx-lime);
+            cursor: pointer;
+            border: none;
+        }
+        .slider-value { font-weight: 700; color: var(--sgx-navy); min-width: 40px; font-size: 13px; }
+
+        .main-btn {
+            width: 100%;
+            background: var(--sgx-navy);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: var(--radius);
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.25s ease;
+            margin-top: 8px;
+        }
+        .main-btn:hover {
+            background: #1A3057;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(33, 60, 109, 0.25);
+        }
+        .main-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .loading-dots { display: inline-flex; gap: 5px; margin-right: 8px; vertical-align: middle; }
+        .loading-dots span {
+            width: 6px; height: 6px;
+            background: var(--sgx-lime);
+            border-radius: 50%;
+            animation: bounce 0.6s ease infinite alternate;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { to { transform: translateY(-4px); } }
+
+        .error-msg { background: #FEF2F2; color: #B91C1C; padding: 12px; border-radius: var(--radius-sm); font-size: 12px; border: 1px solid #FECACA; }
+        .success-msg { background: var(--bg-light); color: #166534; padding: 12px; border-radius: var(--radius-sm); font-size: 12px; border: 1px solid var(--border-soft); }
+
+        #all-companies { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg-white); }
+        .company-row {
+            background: var(--bg-white);
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 5px solid var(--sgx-lime);
+            transition: all 0.2s;
+        }
+        .company-row:hover { box-shadow: var(--shadow-soft); border-color: var(--sgx-lime-light); }
+        .company-row.vol-low { background: rgba(187, 247, 208, 0.7); border-left-color: #059669; }
+        .company-row.vol-med { background: rgba(254, 249, 231, 0.7); border-left-color: #f59e0b; }
+        .company-row.vol-high { background: rgba(254, 202, 202, 0.7); border-left-color: #dc2626; }
+        .company-row b { color: var(--sgx-navy); font-size: 15px; font-weight: 700; }
+        .company-row .ticker { color: var(--text-muted); font-size: 12px; font-weight: 500; }
+        .company-row .metrics { display: flex; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+        .company-row .metrics span { background: var(--bg-light); padding: 4px 8px; border-radius: 6px; font-weight: 600; color: var(--sgx-navy); }
+        .company-row .vol-block { display: flex; flex-direction: column; align-items: center; background: var(--bg-light); padding: 4px 8px; border-radius: 6px; }
+        .company-row .vol-block .vol-label { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .company-row .vol-block .vol-value { font-size: 12px; font-weight: 600; color: var(--sgx-navy); }
+        .company-row .fact { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.45; }
+
+        #add-form { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg-white); }
+        .form-row { margin-bottom: 16px; }
+        .form-row label { display: block; font-size: 12px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; }
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg-white);
+            transition: border-color 0.2s;
+        }
+        .form-row textarea { min-height: 72px; resize: vertical; }
+        .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+            outline: none;
+            border-color: var(--sgx-lime);
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .section-title { font-size: 14px; font-weight: 700; color: var(--sgx-navy); margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border-soft); }
+
+        #rewards-panel { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg-white); }
+        .rewards-card {
+            background: linear-gradient(135deg, var(--bg-light) 0%, #D4E8B8 100%);
+            border: 2px solid var(--sgx-lime);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .rewards-card .leaf-icon { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; opacity: 0.6; }
+        .rewards-card.eligible { background: linear-gradient(135deg, #D4E8B8 0%, var(--sgx-lime-light) 100%); }
+        .rewards-card h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; color: var(--sgx-navy); text-transform: uppercase; letter-spacing: 0.05em; }
+        .rewards-card p { margin: 0; font-size: 12px; color: var(--text-dark); line-height: 1.5; }
+        .rewards-card.ineligible { opacity: 0.9; }
+        .rewards-card.ineligible h3 { color: var(--text-muted); }
+        .reward-categories { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 16px 0; }
+        .reward-item {
+            background: var(--bg-white);
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.2s;
+        }
+        .reward-item:hover { border-color: var(--sgx-lime); box-shadow: var(--shadow-soft); }
+        .reward-icon { width: 40px; height: 40px; flex-shrink: 0; background: var(--bg-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .reward-item h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--sgx-navy); }
+        .reward-item p { margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+        .claim-btn { background: #0D9488 !important; color: white !important; margin-top: 12px; }
+        .claim-btn:hover { background: #0F766E !important; }
+        .claim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .portfolio-track { margin-bottom: 16px; }
+        .portfolio-track .form-grid { margin-bottom: 12px; }
+        .portfolio-chart-wrap { padding: 12px 16px; background: var(--bg-light); border-bottom: 1px solid var(--border-soft); height: 120px; flex-shrink: 0; }
+        .portfolio-chart-wrap h4 { margin: 0 0 8px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        #portfolio-chart { width: 100%; height: 80px; }
+        #education-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .edu-subtabs { display: flex; gap: 4px; padding: 12px 16px; background: var(--bg-light); border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+        .edu-subtab { flex: 1; padding: 10px 8px; font-size: 10px; font-weight: 600; text-align: center; background: transparent; color: var(--text-muted); border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .edu-subtab:hover { background: rgba(140, 198, 63, 0.15); color: var(--sgx-navy); }
+        .edu-subtab.active { background: var(--sgx-lime); color: white; }
+        .edu-subpanel { display: none; flex: 1; overflow-y: auto; padding: 16px; background: var(--bg-white); }
+        .edu-subpanel.active { display: block; }
+        .edu-section { margin-bottom: 20px; }
+        .edu-section h3 { font-size: 13px; font-weight: 700; color: var(--sgx-navy); margin: 0 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border-soft); }
+        .edu-card { background: var(--bg-light); border: 2px solid var(--border-soft); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; border-left: 4px solid var(--sgx-lime); }
+        .edu-card h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--sgx-navy); }
+        .edu-card p { margin: 0; font-size: 12px; color: var(--text-dark); line-height: 1.5; }
+        .edu-card .impact { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+        .edu-basics .edu-card { border-left-color: var(--sgx-navy); }
+        .insight-card { background: var(--bg-white); border: 2px solid var(--border-soft); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
+        .insight-card .date { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+        .insight-card .headline { font-size: 12px; font-weight: 700; color: var(--sgx-navy); line-height: 1.4; }
+        .insight-card .summary { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
+    </style>
+</head>
+<body>
+<div id="phone">
+    <div id="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='sgx-robot.png') }}" alt="SGX Sustainability Robot">
+        </div>
+        <div id="header-text">
+            <h2>SGX Sustainability Robot</h2>
+            <p class="tagline">SGX INSTITUTIONAL ENGINE</p>
+        </div>
+    </div>
+    <div id="tabs">
+        <button class="tab active" data-tab="portfolio">Portfolio</button>
+        <button class="tab" data-tab="all">All Companies</button>
+        <button class="tab" data-tab="rewards">Rewards</button>
+        <button class="tab" data-tab="education">Education</button>
+        <button class="tab" data-tab="add">Add Company</button>
+    </div>
+    <div id="main-content">
+        <div id="panel-portfolio" class="tab-panel active">
+            <div id="chat-area">
+                <div class="bubble bot"><b>Confidence begins with clarity.</b> I've analyzed 12 top SGX ESG leaders. Move the sliders to reveal your optimal 2026 portfolio.</div>
+            </div>
+            <div id="controls">
+                <div class="s-box">
+                    <label>Environmental (E) <span id="e-v" class="slider-value">50%</span></label>
+                    <input type="range" id="e" value="50" min="0" max="100" oninput="updateSlider('e')">
+                </div>
+                <div class="s-box">
+                    <label>Social (S) <span id="s-v" class="slider-value">50%</span></label>
+                    <input type="range" id="s" value="50" min="0" max="100" oninput="updateSlider('s')">
+                </div>
+                <div class="s-box">
+                    <label>Governance (G) <span id="g-v" class="slider-value">50%</span></label>
+                    <input type="range" id="g" value="50" min="0" max="100" oninput="updateSlider('g')">
+                </div>
+                <div class="s-box">
+                    <label>Yield Performance <span id="y-v" class="slider-value">50%</span></label>
+                    <input type="range" id="y" value="50" min="0" max="100" oninput="updateSlider('y')">
+                </div>
+                <button class="main-btn" id="analyze-btn" onclick="generate()">Analyze Top Matches</button>
+            </div>
+        </div>
+        <div id="panel-all" class="tab-panel">
+            <div id="all-companies"></div>
+        </div>
+        <div id="panel-rewards" class="tab-panel">
+            <div id="rewards-panel">
+                <div class="portfolio-chart-wrap">
+                    <h4>Portfolio value</h4>
+                    <canvas id="portfolio-chart"></canvas>
+                </div>
+                <div class="section-title">Track your portfolio</div>
+                <div class="portfolio-track">
+                    <div class="form-grid">
+                        <div class="form-row"><label>Portfolio value (SGD)</label><input type="number" id="portfolio-value" min="0" placeholder="e.g. 6000" value="6000"></div>
+                        <div class="form-row"><label>Years invested</label><input type="number" id="portfolio-tenure" min="0" step="0.5" placeholder="e.g. 1.5" value="1.5"></div>
+                    </div>
+                    <p style="font-size:11px; color:var(--text-muted); margin:0 0 12px;">Eligible for rewards: $5,000+ in green stocks for 1+ year</p>
+                    <button class="main-btn" onclick="syncFromForm()">Update eligibility</button>
+                </div>
+                <div id="rewards-content"></div>
+            </div>
+        </div>
+        <div id="panel-education" class="tab-panel">
+            <div id="education-panel">
+                <div class="edu-subtabs">
+                    <button class="edu-subtab active" data-edu="basics">ESG Basics</button>
+                    <button class="edu-subtab" data-edu="products">Products</button>
+                    <button class="edu-subtab" data-edu="alerts">Alerts</button>
+                </div>
+                <div id="edu-basics" class="edu-subpanel active">
+                <div class="edu-section edu-basics">
+                    <h3>Learn ESG Basics</h3>
+                    <div class="edu-card">
+                        <h4>What is ESG investing?</h4>
+                        <p>ESG stands for Environmental, Social, and Governance. Investors use these criteria to evaluate companies beyond traditional financial metrics.</p>
+                        <p class="impact"><b>Environmental (E):</b> Climate, carbon footprint, renewable energy. <b>Social (S):</b> Labour practices, community impact. <b>Governance (G):</b> Board structure, transparency.</p>
+                    </div>
+                    <div class="edu-card">
+                        <h4>Why does sustainability matter for returns?</h4>
+                        <p>Higher-ESG companies often show lower volatility, better risk-adjusted returns, and resilience during market stress. Sustainable practices can drive long-term value.</p>
+                    </div>
+                    <div class="edu-card">
+                        <h4>How SustainAdvisor uses ESG scores</h4>
+                        <p>We rank SGX stocks on a 0–100 scale for E, S, and G. Adjust the sliders in the Portfolio tab to match your priorities and get personalised green stock recommendations.</p>
+                    </div>
+                </div>
+                </div>
+                <div id="edu-products" class="edu-subpanel">
+                <div class="edu-section">
+                    <h3>Product-Linked Explanations</h3>
+                    <div class="edu-card">
+                        <h4>Green Bonds</h4>
+                        <p>Bonds that fund clean energy and climate projects. Proceeds go to renewable infrastructure, energy efficiency, or low-carbon transport.</p>
+                        <p class="impact"><b>Impact:</b> Funds clean energy projects; measurable CO2 reduction.</p>
+                    </div>
+                    <div class="edu-card">
+                        <h4>ESG Equity Funds</h4>
+                        <p>Funds that invest in companies with strong ESG profiles. Often focus on renewable energy infrastructure and sustainable supply chains.</p>
+                        <p class="impact"><b>Financials:</b> Stable returns (4–5% p.a.), Low volatility. <b>Impact:</b> CO2 reducible capacity increase.</p>
+                    </div>
+                    <div class="edu-card">
+                        <h4>Socially Responsible Investing</h4>
+                        <p>Invests in companies with high Environmental, Social, and Governance commitments.</p>
+                        <p class="impact"><b>Impact:</b> Ethical business practices, community development.</p>
+                    </div>
+                    <div class="edu-card">
+                        <h4>Water / Resource ETFs</h4>
+                        <p>ETFs focused on water management solutions and sustainable resource use.</p>
+                        <p class="impact"><b>Impact:</b> Water management solutions; resource efficiency.</p>
+                    </div>
+                </div>
+                </div>
+                <div id="edu-alerts" class="edu-subpanel">
+                <div class="edu-section">
+                    <h3>ESG Performance Insight Alerts</h3>
+                    <div class="insight-card">
+                        <div class="date">Feb 2026</div>
+                        <div class="headline">Renewable energy equities outperform this month following policy support</div>
+                        <div class="summary">Government incentives and clean-energy targets have driven strength in renewable stocks. This does not tell you what to buy, but helps explain recent performance.</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="date">Jan 2026</div>
+                        <div class="headline">Lower volatility observed in high-ESG portfolios during recent market stress</div>
+                        <div class="summary">High-ESG portfolios showed more stability when volatility spiked. Quality governance and sustainable practices may contribute to resilience.</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="date">Jan 2026</div>
+                        <div class="headline">Governance-focused funds saw reduced drawdowns after earnings volatility</div>
+                        <div class="summary">Strong governance structures appear to buffer against sharp declines. Transparent reporting and accountability matter in volatile periods.</div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+        <div id="panel-add" class="tab-panel">
+            <div id="add-form">
+                <div class="section-title">Company details</div>
+                <div class="form-grid">
+                    <div class="form-row"><label>Company Name *</label><input type="text" id="add-n" placeholder="e.g. DBS Group"></div>
+                    <div class="form-row"><label>Ticker (SGX) *</label><input type="text" id="add-c" placeholder="e.g. D05"></div>
+                </div>
+                <div class="section-title">ESG scores (0–100)</div>
+                <div class="form-grid">
+                    <div class="form-row"><label>Environmental (E) *</label><input type="number" id="add-e" min="0" max="100" value="50"></div>
+                    <div class="form-row"><label>Social (S) *</label><input type="number" id="add-s" min="0" max="100" value="50"></div>
+                    <div class="form-row"><label>Governance (G) *</label><input type="number" id="add-g" min="0" max="100" value="50"></div>
+                    <div class="form-row"><label>Yield % *</label><input type="number" id="add-y" min="0" max="20" step="0.1" value="4.0"></div>
+                </div>
+                <div class="form-row"><label>Volatility *</label><select id="add-vol"><option value="Low">Low</option><option value="Med">Medium</option><option value="High">High</option></select></div>
+                <div class="section-title">Profile</div>
+                <div class="form-row"><label>Fun Fact *</label><input type="text" id="add-f" placeholder="Short memorable fact"></div>
+                <div class="form-row"><label>Dividends / Payouts *</label><textarea id="add-d" placeholder="Dividend history & payout info"></textarea></div>
+                <div class="form-row"><label>Growth Path *</label><textarea id="add-gr" placeholder="Growth drivers & outlook"></textarea></div>
+                <div class="form-row"><label>Position / Edge *</label><textarea id="add-p" placeholder="Competitive position"></textarea></div>
+                <div class="form-row"><label>Website (IR) *</label><input type="text" id="add-w" placeholder="www.company.com/investors"></div>
+                <div class="form-row"><label>Key Risk *</label><input type="text" id="add-risk" placeholder="e.g. Interest rate sensitivity"></div>
+                <div id="add-status"></div>
+                <button class="main-btn" style="margin-top: 16px" onclick="addCompany()">Add Company</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector('.tab[data-tab="' + tabId + '"]').classList.add('active');
+        document.getElementById('panel-' + tabId).classList.add('active');
+        if (tabId === 'all') loadAllCompanies();
+        if (tabId === 'rewards') { syncPortfolioForm(getPortfolio()); updateRewardsEligibility(); }
+        if (tabId === 'rewards') renderPortfolioChart();
+    }
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+    document.querySelectorAll('.edu-subtab').forEach(t => t.addEventListener('click', function() {
+        document.querySelectorAll('.edu-subtab').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.edu-subpanel').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('edu-' + this.dataset.edu).classList.add('active');
+    }));
+
+    let portfolioChart = null;
+
+    function renderPortfolioChart() {
+        const p = getPortfolio();
+        const ctx = document.getElementById('portfolio-chart');
+        if (!ctx || !window.Chart) return;
+        if (portfolioChart) portfolioChart.destroy();
+        const holdings = (p.holdings || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+        let labels = ['Start'];
+        let values = [0];
+        let cum = 0;
+        holdings.forEach(h => {
+            cum += h.amount || 0;
+            const d = new Date(h.date);
+            labels.push(d.toLocaleDateString('en-SG', { month: 'short', day: 'numeric' }));
+            values.push(cum);
+        });
+        if (holdings.length === 0) {
+            const v = p.value || 0;
+            labels = v > 0 ? ['Start', 'Now'] : ['Today'];
+            values = v > 0 ? [0, v] : [0];
+        } else {
+            labels.push('Now');
+            values.push(p.value || cum);
+        }
+        portfolioChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Value (SGD)',
+                    data: values,
+                    borderColor: '#8CC63F',
+                    backgroundColor: 'rgba(140, 198, 63, 0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: values.length <= 2 ? 3 : 2,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { maxRotation: 0, font: { size: 9 } }, grid: { display: false } },
+                    y: { min: 0, ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false } }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const p = getPortfolio();
+        if (p.value > 0 || p.holdings?.length) syncPortfolioForm(p);
+    });
+
+    function updateSlider(id) {
+        const val = document.getElementById(id).value;
+        document.getElementById(id + '-v').innerText = val + '%';
+    }
+
+    function addBubble(text, type) {
+        const area = document.getElementById('chat-area');
+        const b = document.createElement('div');
+        b.className = 'bubble ' + type;
+        b.innerHTML = text;
+        area.appendChild(b);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function addLoadingBubble() {
+        const area = document.getElementById('chat-area');
+        const b = document.createElement('div');
+        b.className = 'bubble bot';
+        b.id = 'loading-bubble';
+        b.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span> Analyzing ESG matches...';
+        area.appendChild(b);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function removeLoadingBubble() {
+        const lb = document.getElementById('loading-bubble');
+        if (lb) lb.remove();
+    }
+
+    function buildStockCard(s, uE, uS, uG, uY) {
+        const uGHighlight = uG > 70 ? 'Governance' : 'Sustainability';
+        return `
+            <div class="stock-card">
+                <div class="match-tag">${Math.round(s.match)}% Match</div>
+                <b style="color:var(--sgx-navy); font-size:17px;">${s.n} (${s.c})</b>
+                <div class="comp-grid">
+                    <div class="comp-pill" title="Environmental score"><span>Env</span><b>${s.e}%</b></div>
+                    <div class="comp-pill" title="Social score"><span>Soc</span><b>${s.s}%</b></div>
+                    <div class="comp-pill" title="Governance score"><span>Gov</span><b>${s.g}%</b></div>
+                    <div class="comp-pill" title="Yield"><span>Yield</span><b>${s.y}%</b></div>
+                </div>
+                <div class="action-grid">
+                    <button class="btn-sm" onclick="askDetail('Logic','This stock matches your high weight on ${uGHighlight} and your target yield.')">Match Logic</button>
+                    <button class="btn-sm" onclick="askDetail('Risk','${(s.vol || '')} Volatility. Key Risk: ${s.risk || 'Market fluctuations.'}')">Risk Alert</button>
+                    <button class="btn-sm" onclick="askDetail('Dividends','${s.d}')">Payouts</button>
+                    <button class="btn-sm" onclick="askDetail('Growth','${s.gr}')">Growth Path</button>
+                    <button class="btn-sm" onclick="askDetail('Fact','${s.f}')">Fun Fact</button>
+                    <button class="btn-sm" onclick="askDetail('Site','Visit <a href=\\'https://${s.w}\\' target=\\'_blank\\'>${s.n} IR</a>')">Website</button>
+                    <button class="btn-sm invest-btn" data-ticker="${s.c}" data-name="${(s.n || '').replace(/"/g, '&quot;')}" onclick="startInvesting(this.dataset.ticker, this.dataset.name)">Start Investing ($10 Min)</button>
+                </div>
+            </div>`;
+    }
+
+    function askDetail(type, val) {
+        addBubble(`Tell me about ${type}.`, 'user');
+        setTimeout(() => addBubble(`<b>${type}:</b> ${val}`, 'bot'), 400);
+    }
+
+    const PORTFOLIO_KEY = 'sustainadvisor_portfolio';
+
+    function getPortfolio() {
+        try {
+            const raw = localStorage.getItem(PORTFOLIO_KEY);
+            return raw ? JSON.parse(raw) : { value: 0, tenure: 0, holdings: [] };
+        } catch (e) { return { value: 0, tenure: 0, holdings: [] }; }
+    }
+
+    function savePortfolio(p) {
+        localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(p));
+        syncPortfolioForm(p);
+    }
+
+    function syncPortfolioForm(p) {
+        const v = document.getElementById('portfolio-value');
+        const t = document.getElementById('portfolio-tenure');
+        if (v) v.value = p.value;
+        if (t) t.value = p.tenure;
+    }
+
+    function syncFromForm() {
+        const v = parseFloat(document.getElementById('portfolio-value').value) || 0;
+        const t = parseFloat(document.getElementById('portfolio-tenure').value) || 0;
+        const p = getPortfolio();
+        p.value = v;
+        p.tenure = t;
+        localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(p));
+        updateRewardsEligibility();
+    }
+
+    function startInvesting(ticker, name) {
+        const input = prompt('Enter amount to invest in ' + (name || ticker) + ' (SGD, min $10)', '500');
+        if (input == null || input === '') return;
+        const amount = Math.max(10, parseFloat(input) || 0);
+        if (amount < 10) return;
+        const p = getPortfolio();
+        p.value = (p.value || 0) + amount;
+        p.holdings = p.holdings || [];
+        p.holdings.push({ ticker, name, amount, date: new Date().toISOString() });
+        if (p.tenure < 1) p.tenure = 1;
+        savePortfolio(p);
+        addBubble(`Invested $${amount} in ${name} (${ticker}).`, 'user');
+        addBubble(`<b>Investment recorded!</b> Portfolio: $${p.value} | Tenure: ${p.tenure} year(s). Check the Rewards tab for eligibility.`, 'bot');
+        switchTab('rewards');
+        updateRewardsEligibility();
+    }
+
+    async function generate() {
+        const uE = parseInt(document.getElementById('e').value);
+        const uS = parseInt(document.getElementById('s').value);
+        const uG = parseInt(document.getElementById('g').value);
+        const uY = parseInt(document.getElementById('y').value);
+
+        const btn = document.getElementById('analyze-btn');
+        btn.disabled = true;
+        btn.textContent = 'Analyzing...';
+
+        addBubble(`Priorities: E:${uE} S:${uS} G:${uG} Y:${uY}`, 'user');
+        addLoadingBubble();
+
+        try {
+            const res = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ e: uE, s: uS, g: uG, y: uY, top_n: 3 })
+            });
+            const data = await res.json();
+
+            removeLoadingBubble();
+
+            if (!res.ok) {
+                addBubble(`<span class="error-msg">${data.error || 'Analysis failed.'}</span>`, 'bot');
+                return;
+            }
+
+            addBubble("<b>Institutional Matching Success.</b> I have identified 3 stocks that best represent your values:", "bot");
+
+            const area = document.getElementById('chat-area');
+            data.stocks.forEach(s => {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = buildStockCard(s, uE, uS, uG, uY);
+                area.appendChild(wrap.firstElementChild);
+            });
+            area.scrollTop = area.scrollHeight;
+        } catch (err) {
+            removeLoadingBubble();
+            addBubble('<span class="error-msg">Network error. Please try again.</span>', 'bot');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Analyze Top Matches';
+        }
+    }
+
+    async function loadAllCompanies() {
+        const el = document.getElementById('all-companies');
+        el.innerHTML = '<div class="bubble bot">Loading companies...</div>';
+        try {
+            const res = await fetch('/api/stocks');
+            const data = await res.json();
+            if (!data.stocks || data.stocks.length === 0) {
+                el.innerHTML = '<div class="bubble bot">No companies in the database yet. Add one in the Add Company tab.</div>';
+                return;
+            }
+            el.innerHTML = data.stocks.map(s => {
+                const vol = (s.vol || 'Med').toLowerCase();
+                const volClass = vol === 'low' ? 'vol-low' : vol === 'high' ? 'vol-high' : 'vol-med';
+                return `
+                <div class="company-row ${volClass}">
+                    <b>${s.n}</b> <span class="ticker">(${s.c})</span>
+                    <div class="metrics"><span>E ${s.e}%</span><span>S ${s.s}%</span><span>G ${s.g}%</span><span>Yield ${s.y}%</span><span class="vol-block"><span class="vol-label">Volatility</span><span class="vol-value">${s.vol}</span></span></div>
+                    <div class="fact">${s.f}</div>
+                </div>
+            `; }).join('');
+        } catch (err) {
+            el.innerHTML = '<div class="error-msg">Failed to load companies.</div>';
+        }
+    }
+
+    async function addCompany() {
+        const status = document.getElementById('add-status');
+        const stock = {
+            n: document.getElementById('add-n').value.trim(),
+            c: document.getElementById('add-c').value.trim().toUpperCase(),
+            e: parseInt(document.getElementById('add-e').value) || 50,
+            s: parseInt(document.getElementById('add-s').value) || 50,
+            g: parseInt(document.getElementById('add-g').value) || 50,
+            y: parseFloat(document.getElementById('add-y').value) || 4,
+            vol: document.getElementById('add-vol').value,
+            f: document.getElementById('add-f').value.trim(),
+            d: document.getElementById('add-d').value.trim(),
+            gr: document.getElementById('add-gr').value.trim(),
+            p: document.getElementById('add-p').value.trim(),
+            w: document.getElementById('add-w').value.trim(),
+            risk: document.getElementById('add-risk').value.trim()
+        };
+        if (!stock.n || !stock.c || !stock.f || !stock.d || !stock.gr || !stock.p || !stock.w || !stock.risk) {
+            status.innerHTML = '<span class="error-msg">Please fill all required fields.</span>';
+            return;
+        }
+        if (!stock.w.startsWith('www.') && !stock.w.startsWith('http')) stock.w = 'www.' + stock.w.replace(/^https?:\/\//, '');
+        status.innerHTML = '';
+        try {
+            const res = await fetch('/api/stocks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(stock)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                status.innerHTML = '<span class="success-msg">Company added successfully!</span>';
+                document.getElementById('add-n').value = '';
+                document.getElementById('add-c').value = '';
+                document.getElementById('add-e').value = '50';
+                document.getElementById('add-s').value = '50';
+                document.getElementById('add-g').value = '50';
+                document.getElementById('add-y').value = '4';
+                document.getElementById('add-vol').value = 'Low';
+                document.getElementById('add-f').value = '';
+                document.getElementById('add-d').value = '';
+                document.getElementById('add-gr').value = '';
+                document.getElementById('add-p').value = '';
+                document.getElementById('add-w').value = '';
+                document.getElementById('add-risk').value = '';
+            } else {
+                status.innerHTML = '<span class="error-msg">' + (data.error || 'Failed to add company.') + '</span>';
+            }
+        } catch (err) {
+            status.innerHTML = '<span class="error-msg">Network error. Please try again.</span>';
+        }
+    }
+
+    function claimRewards() {
+        if (isRewardsEligible()) alert('Rewards claimed! Check your email for redemption details.');
+    }
+
+    function isRewardsEligible() {
+        const value = parseFloat(document.getElementById('portfolio-value').value) || 0;
+        const tenure = parseFloat(document.getElementById('portfolio-tenure').value) || 0;
+        return value >= 5000 && tenure >= 1;
+    }
+
+    function updateRewardsEligibility() {
+        const eligible = isRewardsEligible();
+        const el = document.getElementById('rewards-content');
+        const leafSvg = '<img class="leaf-icon" src="/static/leaf.svg" alt="">';
+        el.innerHTML = `
+            <div class="rewards-card ${eligible ? 'eligible' : 'ineligible'}">
+                ${leafSvg}
+                <h3>${eligible ? 'CONGRATS! YOU ARE ELIGIBLE FOR REWARDS!' : 'Track your portfolio to unlock rewards'}</h3>
+                <p>${eligible
+                    ? 'Based on your sustained investment of over $5,000 in green stocks for 1+ year, you have earned exclusive financial incentives!'
+                    : 'Invest $5,000+ in green stocks for 1+ year to unlock platform fee waivers, tax credits, and climate vouchers.'}</p>
+            </div>
+            <div class="reward-categories">
+                <div class="reward-item">
+                    <div class="reward-icon">$</div>
+                    <div><h4>Platform Fee Waivers</h4><p>Redeem points for zero trading fees.</p></div>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-icon">&#x1F6E1;</div>
+                    <div><h4>Tax Credit</h4><p>Up to $1,000 off personal income tax.</p></div>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-icon">&#x1F381;</div>
+                    <div><h4>Climate Voucher</h4><p>Receive up to $500 for eco-products and services.</p></div>
+                </div>
+            </div>
+            <button class="main-btn claim-btn" ${eligible ? '' : 'disabled'} onclick="claimRewards()">Claim Your Rewards Now</button>
+        `;
+    }
+</script>
+</body>
+</html>

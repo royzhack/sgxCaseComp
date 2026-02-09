@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SustainAdvisor Elite | SGX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --sgx-blue: #003366; --sgx-green: #059669; --gold: #d4af37; --bg: #f8fafc; }
+        body { background: #020617; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; }
+        #phone { width: 400px; height: 850px; background: var(--bg); border-radius: 45px; border: 10px solid #1e293b; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 50px 100px rgba(0,0,0,0.8); }
+        #header { background: var(--sgx-blue); color: white; padding: 50px 20px 20px; text-align: center; border-bottom: 4px solid var(--gold); }
+        #chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #ffffff; scroll-behavior: smooth; }
+        .bubble { padding: 12px 16px; border-radius: 20px; font-size: 13px; max-width: 85%; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .bot { background: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e2e8f0; color: #1e293b; }
+        .user { background: var(--sgx-green); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .stock-card { background: white; border: 2px solid #e2e8f0; border-radius: 20px; padding: 18px; margin-top: 10px; position: relative; border-left: 6px solid var(--sgx-blue); }
+        .match-tag { position: absolute; top: 0; right: 0; background: var(--gold); color: white; padding: 5px 12px; font-size: 11px; font-weight: 800; border-bottom-left-radius: 15px; }
+        .comp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 12px 0; }
+        .comp-pill { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; }
+        .comp-pill span { display: block; font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .comp-pill b { font-size: 12px; color: var(--sgx-blue); }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-sm { padding: 8px; font-size: 10px; font-weight: 700; border-radius: 10px; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; transition: 0.2s; }
+        .btn-sm:hover { background: #f1f5f9; border-color: var(--sgx-blue); }
+        .invest-btn { grid-column: span 2; background: var(--sgx-green); color: white; border: none; padding: 12px; font-weight: 800; margin-top: 5px; font-size: 12px; }
+        #controls { background: white; padding: 25px; border-top: 1px solid #e2e8f0; border-radius: 35px 35px 0 0; }
+        .s-box { margin-bottom: 15px; }
+        .s-box label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #475569; margin-bottom: 8px; }
+        input[type=range] { width: 100%; accent-color: var(--sgx-green); cursor: pointer; }
+        .main-btn { width: 100%; background: var(--sgx-blue); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 15px; transition: 0.3s; }
+        .main-btn:hover { background: #002244; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+<div id="phone">
+    <div id="header">
+        <h2 style="margin:0">SustainAdvisor Elite</h2>
+        <p style="margin:5px 0 0; font-size:10px; font-weight:700; opacity:0.8; letter-spacing:1px;">SGX INSTITUTIONAL ENGINE</p>
+    </div>
+    <div id="chat-area">
+        <div class="bubble bot"><b>Confidence begins with clarity.</b> I've analyzed 12 top SGX ESG leaders. Move the sliders to reveal your optimal 2026 portfolio.</div>
+    </div>
+    <div id="controls">
+        <div class="s-box"><label>ENVIRONMENTAL (E) <span id="e-v">50%</span></label><input type="range" id="e" value="50" oninput="v('e')"></div>
+        <div class="s-box"><label>SOCIAL (S) <span id="s-v">50%</span></label><input type="range" id="s" value="50" oninput="v('s')"></div>
+        <div class="s-box"><label>GOVERNANCE (G) <span id="g-v">50%</span></label><input type="range" id="g" value="50" oninput="v('g')"></div>
+        <div class="s-box"><label>YIELD PERFORMANCE <span id="y-v">50%</span></label><input type="range" id="y" value="50" oninput="v('y')"></div>
+        <button class="main-btn" onclick="generate()">ANALYZE TOP MATCHES</button>
+    </div>
+</div>
+
+<script>
+    const database = [
+        { n: "DBS Group", c: "D05", e: 72, s: 82, g: 98, y: 5.2, vol: "Low", f: "Voted World's Best Bank 5 times.", d: "Quarterly dividends; highly reliable.", gr: "Expansion into digital assets & carbon exchange.", p: "Top-tier Governance compared to regional banks.", w: "www.dbs.com/investors" },
+        { n: "Sembcorp Ind.", c: "U96", e: 96, s: 68, g: 75, y: 3.8, vol: "Med", f: "SG's largest renewable energy player.", d: "Steady growth; payouts linked to green profit.", gr: "Scaling brown-to-green energy transition.", p: "Leading the utilities sector in ESG metrics.", w: "www.sembcorp.com" },
+        { n: "City Develop.", c: "C09", e: 94, s: 88, g: 90, y: 2.8, vol: "Low", f: "Pioneer in green building since 2000s.", d: "Conservative but consistent annual payouts.", gr: "Global expansion of sustainable luxury hotels.", p: "Ranked #1 most sustainable real estate firm.", w: "www.cdl.com.sg" },
+        { n: "Singtel", c: "Z74", e: 82, s: 92, g: 88, y: 5.4, vol: "Low", f: "Deep focus on workplace disability inclusion.", d: "Reliable 'Dividend Aristocrat' in Singapore.", gr: "Next-gen 5G and green data center growth.", p: "Superior social score over regional telcos.", w: "www.singtel.com" },
+        { n: "OCBC Bank", c: "O39", e: 75, s: 80, g: 94, y: 5.8, vol: "Low", f: "Strongest capital ratios in SE Asia.", d: "High yield; strong payout history.", gr: "ASEAN-Greater China wealth management hub.", p: "More value-oriented than DBS with similar G.", w: "www.ocbc.com" },
+        { n: "CapitaLand Ascas", c: "A17U", e: 85, s: 78, g: 82, y: 6.2, vol: "Med", f: "Dominant in eco-friendly logistics space.", d: "High REIT distribution payouts (DPU).", gr: "High-tech industrial space demand surge.", p: "Largest industrial REIT in Singapore.", w: "www.capitaland.com" },
+        { n: "SIA", c: "C6L", e: 68, s: 85, g: 82, y: 4.5, vol: "High", f: "Pioneering Sustainable Aviation Fuel (SAF).", d: "Resumed payouts following profit records.", gr: "Full travel recovery and fleet modernization.", p: "Global brand leader in aviation sustainability.", w: "www.singaporeair.com" },
+        { n: "Keppel Ltd", c: "BN4", e: 88, s: 76, g: 80, y: 4.3, vol: "Med", f: "Global asset manager for clean infra.", d: "Competitive semi-annual distributions.", gr: "Asset-light model boosting return on equity.", p: "Pivoting faster than traditional conglomerates.", w: "www.keppel.com" },
+        { n: "MapleTree Pan Asia", c: "N2IU", e: 78, s: 82, g: 80, y: 6.5, vol: "Med", f: "Owns VivoCity, SG's largest mall.", d: "Top-tier yield for income-seekers.", gr: "Retail and office rebound in major hubs.", p: "Exceptional footprint in Asian commercial hubs.", w: "www.mapletreepanasiacommercialtrust.com" },
+        { n: "ST Engineering", c: "S63", e: 74, s: 86, g: 85, y: 3.6, vol: "Low", f: "Global leader in aircraft maintenance.", d: "Recession-resilient dividend history.", gr: "Smart city and aerospace defense contracts.", p: "Stability play for conservative portfolios.", w: "www.stengg.com" },
+        { n: "ComfortDelGro", c: "C52", e: 90, s: 82, g: 78, y: 5.1, vol: "Med", f: "Running EV fleets across 7 countries.", d: "Consistent payouts supported by cash flow.", gr: "Public transport electrification globally.", p: "Transportation sector leader in social metrics.", w: "www.comfortdelgro.com" },
+        { n: "Wilmar Intl.", c: "F34", e: 66, s: 74, g: 80, y: 4.1, vol: "High", f: "World's largest palm oil processor.", d: "Dividend varies with commodity cycles.", gr: "Expanding consumer food brands in China/India.", p: "Critical scale in global food security.", w: "www.wilmar-international.com" }
+    ];
+
+    function v(id) { document.getElementById(id + '-v').innerText = document.getElementById(id).value + '%'; }
+    function add(t, type) {
+        const a = document.getElementById('chat-area');
+        const d = document.createElement('div'); d.className = 'bubble ' + type; d.innerHTML = t;
+        a.appendChild(d); a.scrollTop = a.scrollHeight;
+    }
+
+    function generate() {
+        const uE = parseInt(document.getElementById('e').value);
+        const uS = parseInt(document.getElementById('s').value);
+        const uG = parseInt(document.getElementById('g').value);
+        const uY = parseInt(document.getElementById('y').value);
+
+        let ranked = database.map(s => {
+            let diff = Math.abs(s.e - uE) + Math.abs(s.s - uS) + Math.abs(s.g - uG) + Math.abs((s.y * 15) - uY);
+            let match = Math.max(0, 100 - (diff / 4.5));
+            return { ...s, match };
+        }).sort((a, b) => b.match - a.match).slice(0, 3);
+
+        add(`Priorities: E:${uE} S:${uS} G:${uG} Y:${uY}`, 'user');
+        setTimeout(() => {
+            add("<b>Institutional Matching Success.</b> I have identified 3 stocks that best represent your values:", "bot");
+            ranked.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'stock-card';
+                card.innerHTML = `
+                    <div class="match-tag">${Math.round(s.match)}% Match</div>
+                    <b style="color:var(--sgx-blue); font-size:17px;">${s.n} (${s.c})</b>
+                    <div class="comp-grid">
+                        <div class="comp-pill"><span>Env</span><b>${s.e}%</b></div>
+                        <div class="comp-pill"><span>Soc</span><b>${s.s}%</b></div>
+                        <div class="comp-pill"><span>Gov</span><b>${s.g}%</b></div>
+                        <div class="comp-pill"><span>Yield</span><b>${s.y}%</b></div>
+                    </div>
+                    <div class="action-grid">
+                        <button class="btn-sm" onclick="msg('Logic','This stock matches your high weight on ${uG > 70 ? 'Governance' : 'Sustainability'} and your target yield.')">Match Logic</button>
+                        <button class="btn-sm" onclick="msg('Risk','${s.vol} Volatility. Key Risk: ${s.risk || 'Market fluctuations.'}')">Risk Alert</button>
+                        <button class="btn-sm" onclick="msg('Dividends','${s.d}')">Payouts</button>
+                        <button class="btn-sm" onclick="msg('Growth','${s.gr}')">Growth Path</button>
+                        <button class="btn-sm" onclick="msg('Fact','${s.f}')">Fun Fact</button>
+                        <button class="btn-sm" onclick="msg('Site','Visit <a href=\\'https://${s.w}\\' target=\\'_blank\\'>${s.n} IR</a>')">Website</button>
+                        <button class="btn-sm invest-btn" onclick="msg('Invest','Search <b>${s.c}</b> on your broker. Buy fractional for as low as $10.')">Start Investing ($10 Min)</button>
+                    </div>`;
+                document.getElementById('chat-area').appendChild(card);
+            });
+        }, 600);
+    }
+
+    function msg(type, val) {
+        add(`Tell me about ${type}.`, 'user');
+        setTimeout(() => add(`<b>${type}:</b> ${val}`, 'bot'), 400);
+    }
+</script>
+</body>
+</html>
