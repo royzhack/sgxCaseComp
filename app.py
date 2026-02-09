@@ -59,9 +59,15 @@ def save_stocks(stocks):
             return
         except Exception:
             pass
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    with open(DATA_FILE, "w") as f:
-        json.dump(stocks, f, indent=2)
+    try:
+        os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+        with open(DATA_FILE, "w") as f:
+            json.dump(stocks, f, indent=2)
+    except (OSError, PermissionError) as e:
+        raise RuntimeError(
+            "Storage is read-only. Add Upstash Redis in Vercel Storage and set "
+            "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to enable Add Company."
+        ) from e
 
 
 def get_stocks():
@@ -151,7 +157,10 @@ def stocks():
         return jsonify({"error": f"Company with ticker {stock['c']} already exists"}), 400
 
     stocks.append(stock)
-    save_stocks(stocks)
+    try:
+        save_stocks(stocks)
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 503
     return jsonify({"success": True, "stock": stock})
 
 
